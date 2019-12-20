@@ -2,15 +2,15 @@ import z3
 
 class PMString:
     natures = ["HARDY", "LONELY", "BRAVE", "ADAMANT", "NAUGHTY", "BOLD", "DOCILE",
-           "RELAXED", "IMPISH", "LAX", "TIMID", "HASTY", "SERIOUS", "JOLLY",
-           "NAIVE", "MODEST", "MILD", "QUIET", "BASHFUL", "RASH", "CALM",
-           "GENTLE", "SASSY", "CAREFUL", "QUIRKY"]
+               "RELAXED", "IMPISH", "LAX", "TIMID", "HASTY", "SERIOUS", "JOLLY",
+               "NAIVE", "MODEST", "MILD", "QUIET", "BASHFUL", "RASH", "CALM",
+               "GENTLE", "SASSY", "CAREFUL", "QUIRKY"]
 
 class XOROSHIRO:
     ulongmask = 2 ** 64 - 1
     uintmask = 2 ** 32 - 1
 
-    def __init__(self, seed, seed2 = 0x82A2B175229D6A5B):
+    def __init__(self, seed, seed2=0x82A2B175229D6A5B):
             self.seed = [seed, seed2]
 
     def state(self):
@@ -70,12 +70,15 @@ class XOROSHIRO:
         return [ model[start_s0].as_long() for model in models ]
 
 class Raid:
-    def __init__(self,seed,flawlessiv, HA = 0, RandomGender = 1):
+    def __init__(self, seed, flawlessiv, HA=0, RandomGender=1, ability=[], nature=[], flg=False):
         self.seed = seed
         r = XOROSHIRO(seed)
         self.EC = r.nextuint()
         OTID = r.nextuint()
         self.PID = r.nextuint()
+        self.ability = ability
+        self.nature = nature
+        self.flg = flg
 
         self.XOR = (self.PID >> 16) ^ (self.PID & 0xFFFF) ^ (OTID >> 16) ^ (OTID & 0xFFFF)
         if self.XOR >= 16:
@@ -105,7 +108,19 @@ class Raid:
         self.Nature = r.rand(25)
 
     def print(self):
-        print(f"Seed:{self.seed:016X}\tShinyType:{self.ShinyType}\tEC:{self.EC:08X}\tPID:{self.PID:08X}\tAbility:{self.Ability}\tGender:{self.Gender}\tNature:{PMString.natures[self.Nature]}\tIVs:{self.IVs}")
+        if self.ability or self.nature:
+            if self.flg:
+                if self.Ability in self.ability and PMString.natures[self.Nature] in self.nature:
+                    print(f"Seed: {self.seed:016X}\tShinyType: {self.ShinyType}\tEC: {self.EC:08X}\tPID: {self.PID:08X}\tAbility: {self.Ability}\tGender: {self.Gender}\tNature: {PMString.natures[self.Nature]}\tIVs: {self.IVs}")
+                    return True
+            elif self.Ability in self.ability or PMString.natures[self.Nature] in self.nature:
+                print(f"Seed: {self.seed:016X}\tShinyType: {self.ShinyType}\tEC: {self.EC:08X}\tPID: {self.PID:08X}\tAbility: {self.Ability}\tGender: {self.Gender}\tNature: {PMString.natures[self.Nature]}\tIVs: {self.IVs}")
+                return True
+        else:
+            print(f"Seed: {self.seed:016X}\tShinyType: {self.ShinyType}\tEC: {self.EC:08X}\tPID: {self.PID:08X}\tAbility: {self.Ability}\tGender: {self.Gender}\tNature: {PMString.natures[self.Nature]}\tIVs: {self.IVs}")
+            return True
+
+        return False
 
     @staticmethod
     def getseeds(EC,PID,IVs):
@@ -127,7 +142,7 @@ class Raid:
                 for seed in seeds:
                     r = Raid(seed,iv_count)
                     if IVs == r.IVs:
-                        result.append([seed,-iv_count])
+                        result.append([seed, -iv_count])
         return result
 
 def sym_xoroshiro128plus(sym_s0, sym_s1, result):
